@@ -1,0 +1,6 @@
+numpy>=1.26
+scipy>=1.11
+pandas>=2.0
+matplotlib>=3.7
+statsmodels>=0.14
+requests>=2.31      # only needed for the live data-collection path in collect.py

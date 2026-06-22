@@ -1,5 +1,4 @@
 numpy>=1.26
-GOOGLE_API_KEY=AQ.Ab8RN6JO0W3KjBD9S3EsCx7NPH8acz2d7574iP7qOZrCVREYbA
 scipy>=1.11
 pandas>=2.0
 matplotlib>=3.7

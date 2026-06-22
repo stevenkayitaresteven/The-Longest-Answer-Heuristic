@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+
+# Local real-data corpora (collected per-user via collect.py; not redistributed)
+llm-mcq-length-bias/data/corpus_*.jsonl
+!llm-mcq-length-bias/data/corpus_dryrun.jsonl

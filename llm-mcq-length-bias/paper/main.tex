@@ -200,7 +200,7 @@ of the generated key relative to its distractors---whether the key is
 distinguishable by a surface feature---has received far less attention. Recent
 work has begun to flag that AI-assisted authoring can \emph{increase} the rate
 of item-writing flaws through automation bias
-\citep{frontiers2026automation,kortemeyer2024}, and comparative studies of LLM
+\citep{frontiers2026automation,an2026orchestrating}, and comparative studies of LLM
 MCQ generators are emerging \citep{comparativeMCQ2025,benchmarker2026}. We
 contribute the missing measurement: a direct, cross-model quantification of
 answer-length leakage as an exploitable cue.
@@ -739,14 +739,17 @@ llm-mcq-length-bias/
 Typical workflow:
 \begin{verbatim}
 # 1. validate pipeline offline (no keys)
-python src/collect.py --dry-run -o data/dry.jsonl
-python src/synthesize_demo.py -o data/synthetic_mcq.jsonl
-python src/analyze.py --corpus data/synthetic_mcq.jsonl \
+python src/collect.py --dry-run --out data/dry.jsonl
+python src/synthesize_demo.py --out data/synthetic_mcq.jsonl
+python src/analyze.py --data data/synthetic_mcq.jsonl \
                       --tag synthetic
-# 2. real run (needs your API keys, ToS-compliant)
+# 2. real run (needs your API keys, ToS-compliant);
+#    run collect.py once per provider, then concatenate
 export ANTHROPIC_API_KEY=...   # etc. per provider
-python src/collect.py --models all -o data/real.jsonl
-python src/analyze.py --corpus data/real.jsonl --tag real
+python src/collect.py --provider anthropic --model <id> \
+                      --out data/corpus_claude.jsonl
+cat data/corpus_*.jsonl > data/real.jsonl
+python src/analyze.py --data data/real.jsonl --tag real
 \end{verbatim}
 
 \section{Metric Summary}

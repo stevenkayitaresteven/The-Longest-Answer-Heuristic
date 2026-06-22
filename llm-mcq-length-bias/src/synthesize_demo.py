@@ -153,4 +153,12 @@ def main(out_path: str = "data/synthetic_mcq.jsonl", n_per_cell: int = 40,
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    ap = argparse.ArgumentParser(description="Generate the synthetic MCQ corpus.")
+    ap.add_argument("-o", "--out", default="data/synthetic_mcq.jsonl",
+                    help="output JSONL path")
+    ap.add_argument("--n-per-cell", type=int, default=40,
+                    help="items per (model x subject x difficulty) cell")
+    ap.add_argument("--seed", type=int, default=7, help="RNG seed")
+    args = ap.parse_args()
+    main(out_path=args.out, n_per_cell=args.n_per_cell, seed=args.seed)

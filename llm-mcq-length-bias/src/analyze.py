@@ -30,6 +30,7 @@ from metrics import (compute_report, per_group_reports, logistic_length_leakage,
                      holm_bonferroni, correct_length_rank, verbosity_differential,
                      char_len)
 from mitigate import LengthAuditor, harden_item
+from stats_robust import compare_all as robust_compare_all
 
 # --------------------------------------------------------------------------- #
 # Plot style
@@ -242,6 +243,17 @@ def main():
     print(f"\nLogistic length-leakage: OR per +1 SD = {logit['odds_ratio_per_sd']:.2f} "
           f"(beta={logit['beta_per_sd']:.3f}, p={logit['p']:.2e})")
 
+    # ---- clustering-aware re-analysis (corrects the option-independence flaw) ----
+    print("\nClustering-aware inference (naive vs cluster-robust vs conditional logit):")
+    robust = robust_compare_all(data, n_boot=2000)
+    for _, r in robust["logistic"].items():
+        ci = r["or_ci_per_sd"]
+        print(f"  OR/SD={r['odds_ratio_per_sd']:.3f}  CI[{ci[0]:.2f},{ci[1]:.2f}]  "
+              f"SE={r['se']:.4f}  p={r['p']:.1e}  <- {r['method']}")
+    ab = robust["leakage_auc_cell_bootstrap"]; eb = robust["exploitability_cell_bootstrap"]
+    print(f"  Leakage AUC cell-cluster boot 95% CI: [{ab['ci'][0]:.3f}, {ab['ci'][1]:.3f}]")
+    print(f"  Exploitability cell-cluster boot 95% CI: [{eb['ci'][0]:+.3f}, {eb['ci'][1]:+.3f}]")
+
     per_model = per_group_reports(data, "model")
     per_subject = per_group_reports(data, "subject")
     per_diff = per_group_reports(data, "difficulty")
@@ -296,6 +308,7 @@ def main():
         "per_subject": {s: rep_to_dict(r) for s, r in per_subject.items()},
         "per_difficulty": {d: rep_to_dict(r) for d, r in per_diff.items()},
         "holm_bonferroni": holm,
+        "robust_inference": robust,
         "mitigation": {"before": before, "after": after,
                        "frac_leaky_before": aud_before["frac_leaky"],
                        "frac_leaky_after": aud_after["frac_leaky"]},

@@ -1,0 +1,62 @@
+# Example collection config (TOML). Copy and edit; commit your edited copy so the
+# run is reproducible. NEVER put API keys here — only the NAME of the env var that
+# holds each key. Model ids below are ILLUSTRATIVE; verify current ids in each
+# provider's docs before a real run.
+
+output_dir = "outputs"
+prompt_path = "prompts/mcq_generation.txt"
+request_pause_s = 1.0          # polite pause (s) between successful calls
+
+[grid]                          # the balanced design (no confounding by topic mix)
+subjects      = ["history", "biology", "computer_science", "economics", "geography"]
+difficulties  = ["easy", "medium", "hard"]
+n_per_cell    = 30              # items per (subject x difficulty) cell
+k_options     = 4               # options per item
+
+[decoding]                      # logged with every call for reproducibility
+temperature   = 0.7
+top_p         = 1.0
+seed          = 7               # honored only by providers that support it
+max_tokens    = 4000
+
+[retry]                         # rate-limit safety (exponential backoff)
+max_retries   = 5
+base_delay_s  = 2.0
+max_delay_s   = 60.0
+jitter        = true
+
+[tracking]                      # jsonl (default, no deps) | mlflow | none
+backend         = "jsonl"
+experiment_name = "mcq-length-bias-collection"
+# uri = "file:./mlruns"         # uncomment for MLflow local file store
+
+[[providers]]
+name        = "openai"
+model       = "gpt-4o-mini"     # verify current id
+api_key_env = "OPENAI_API_KEY"
+enabled     = true
+
+[[providers]]
+name        = "anthropic"
+model       = "claude-3-5-sonnet-latest"
+api_key_env = "ANTHROPIC_API_KEY"
+enabled     = true
+
+[[providers]]
+name        = "google"
+model       = "gemini-1.5-pro"
+api_key_env = "GOOGLE_API_KEY"
+enabled     = true
+
+[[providers]]
+name        = "meta"            # Llama via an OpenAI-compatible gateway
+model       = "llama-3.1-70b-instruct"
+api_key_env = "LLAMA_API_KEY"
+# base_url  = "https://api.together.xyz/v1"   # or Meta/Fireworks/Groq endpoint
+enabled     = false             # enable once a gateway + key are configured
+
+[[providers]]
+name        = "mistral"
+model       = "mistral-large-latest"
+api_key_env = "MISTRAL_API_KEY"
+enabled     = false

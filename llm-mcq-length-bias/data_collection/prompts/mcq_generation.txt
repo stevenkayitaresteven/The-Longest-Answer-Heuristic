@@ -1,0 +1,10 @@
+You are writing exam content. Produce exactly {n} multiple-choice questions on the topic of {subject} at {difficulty} difficulty for an undergraduate course.
+
+Requirements:
+- Each question has exactly {k} answer options.
+- Exactly one option is correct.
+- Options should be plausible and academically appropriate.
+
+Return ONLY valid JSON: a list of {n} objects, each:
+{{"stem": "...", "options": ["...", "...", "...", "..."], "answer_index": <0-based int>}}
+No commentary, no markdown fences.

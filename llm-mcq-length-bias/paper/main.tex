@@ -32,9 +32,8 @@
 
 % ---- title ----
 \title{\vspace{-1.4em}\bfseries The Longest-Answer Heuristic:\\
-Characterizing and Mitigating Answer-Length Bias in\\
-LLM-Generated Multiple-Choice Questions as a\\
-Threat to Assessment Integrity}
+Measuring and Mitigating Answer-Length Leakage in\\
+LLM-Generated Multiple-Choice Questions}
 
 \author{%
 Steven\thanks{Department of Artificial Intelligence, Kyungdong University
@@ -744,12 +743,15 @@ default, turning the mitigation from a research artifact into infrastructure.
 %==============================================================
 \section*{Reproducibility and Artifacts}
 \addcontentsline{toc}{section}{Reproducibility and Artifacts}
-All metrics (\texttt{metrics.py}), the collection harness
-(\texttt{collect.py}), the mitigation toolkit (\texttt{mitigate.py}), the
-synthetic generator (\texttt{synthesize\_demo.py}), and the analysis driver
-(\texttt{analyze.py}) are included, along with the synthetic corpus, the
-generated tables, and all figures. The pipeline is deterministic given a seed.
-See Appendix~\ref{app:repo} for the layout and commands.
+All metrics (\texttt{metrics.py}), the clustering-aware inference
+(\texttt{stats\_robust.py}), the legacy harness (\texttt{collect.py}) and a
+modular real-collection package (\texttt{data\_collection/}), the mitigation
+toolkit (\texttt{mitigate.py}), the synthetic generator
+(\texttt{synthesize\_demo.py}), the predictive exploitability pipeline
+(\texttt{exploitability.py}), and the analysis driver (\texttt{analyze.py}) are
+included, along with the synthetic corpus, the generated tables, and all figures.
+The pipeline is deterministic given a seed. See Appendix~\ref{app:repo} for the
+layout and commands.
 
 %==============================================================
 \section*{Ethical Considerations}
@@ -769,15 +771,19 @@ unverified claims about named systems.
 \small
 \begin{verbatim}
 llm-mcq-length-bias/
-  src/metrics.py        # LAA, E, delta, AUC, logistic
-  src/collect.py        # 6-provider harness (--dry-run)
-  src/mitigate.py       # auditor + 3 mitigations
-  src/synthesize_demo.py# synthetic corpus generator
-  src/analyze.py        # driver: tables + figures
-  data/                 # corpora (jsonl)
-  results/              # results_*.json, *.tex tables
-  figures/              # *.png/*.pdf
-  paper/                # main.tex, references.bib
+  src/metrics.py         # LAA, E, delta, AUC, logistic
+  src/stats_robust.py    # clustering-aware inference
+  src/collect.py         # legacy single-file harness
+  src/mitigate.py        # auditor + 3 mitigations
+  src/synthesize_demo.py # synthetic corpus generator
+  src/exploitability.py  # predictive leakage pipeline
+  src/analyze.py         # driver: tables + figures
+  data_collection/       # modular real-collection pkg
+  reports/               # audit + analysis reports
+  data/                  # corpora (jsonl)
+  results/               # results_*.json, *.tex tables
+  figures/               # *.png/*.pdf
+  paper/                 # main.tex, references.bib
 \end{verbatim}
 Typical workflow:
 \begin{verbatim}

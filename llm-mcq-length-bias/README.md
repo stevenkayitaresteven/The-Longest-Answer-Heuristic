@@ -15,15 +15,26 @@ src/
                       Exploitability E, Verbosity Differential delta,
                       key length-rank distribution, length-leakage AUC,
                       logistic leakage regression, Holm-Bonferroni.
-  collect.py          Multi-provider corpus builder (Claude/GPT/Gemini/Grok/
-                      DeepSeek/Perplexity). >>> RUN THIS YOURSELF with API keys.
-                      Has a --dry-run mock so the plumbing is testable offline.
+  stats_robust.py     Clustering-aware inference: conditional logit (exact for
+                      1-of-m), item/cell cluster-robust SEs, cell cluster bootstrap.
+  collect.py          Legacy single-file multi-provider corpus builder (--dry-run).
+                      Superseded by data_collection/ (kept for reference).
   synthesize_demo.py  Generates a SYNTHETIC corpus with injectable bias so the
                       pipeline can produce figures before the real corpus exists.
   mitigate.py         Mitigations: length auditor/gate, length-balanced
                       rewriting, length-matched adversarial distractors,
                       option-order/key-rank balancing, and a hardening pipeline.
-  analyze.py          Runs everything, writes results.json, LaTeX tables, figures.
+  exploitability.py   Predictive leakage pipeline: label-free length features,
+                      3 baselines (LogReg/RF/GB), group-aware CV, clustered CIs.
+                      SELF-TEST-guarded; reportable only on a REAL corpus.
+  analyze.py          Runs everything (incl. clustering-aware inference), writes
+                      results.json, LaTeX tables, figures.
+data_collection/      Modular, tested, reproducible real-collection package
+                      (providers, provenance schema, retry/backoff, config-driven,
+                      structured logging, experiment tracking). See its README.
+reports/              Scientific-review reports (audit, claim alignment, statistics,
+                      closed-loop, collection plan, exploitability, citations,
+                      title, venue). Start at reports/AUDIT_REPORT.md.
 paper/
   main.tex            The manuscript (two-column article class, natbib/bibtex).
   references.bib      Bibliography.

@@ -32,9 +32,8 @@
 
 % ---- title ----
 \title{\vspace{-1.4em}\bfseries The Longest-Answer Heuristic:\\
-Characterizing and Mitigating Answer-Length Bias in\\
-LLM-Generated Multiple-Choice Questions as a\\
-Threat to Assessment Integrity}
+Measuring and Mitigating Answer-Length Leakage in\\
+LLM-Generated Multiple-Choice Questions}
 
 \author{%
 Steven\thanks{Department of Artificial Intelligence, Kyungdong University
@@ -63,9 +62,10 @@ formalize \emph{answer-length leakage} and define a reusable, model-agnostic
 measurement suite: Longest-Answer Accuracy (LAA), an \emph{Exploitability}
 index $E$ that normalizes a guessing strategy's advantage over chance, a
 verbosity differential $\bar\delta$, and a length-only leakage AUC. Second, we
-release an open, provider-agnostic data-collection harness that elicits MCQs
-from six widely used assistants under an identical, length-neutral prompt, so
-that the bias can be \emph{measured} rather than assumed. Third, we contribute
+release an open, provider-agnostic data-collection harness \emph{designed to
+elicit} MCQs from six widely used assistants under an identical, length-neutral
+prompt, so that the bias can be \emph{measured}---rather than assumed---once the
+harness is run with sanctioned API access (a step not performed in this version). Third, we contribute
 a generation-time mitigation toolkit---an auditing gate, a length-balanced
 rewrite planner, length-matched adversarial distractors, and form-level
 key-length balancing---with a measured before/after protocol. Fourth, we
@@ -137,8 +137,8 @@ and \emph{predictable} property of the tool.
 
 \paragraph{Objectives.} We set out to (1) make the phenomenon
 \emph{measurable} with precise, reusable metrics; (2) make it
-\emph{collectable} with an auditable, provider-agnostic harness that elicits
-items under a length-neutral prompt; (3) make it \emph{fixable} at generation
+\emph{collectable} with an auditable, provider-agnostic harness that \emph{can
+elicit} items under a length-neutral prompt; (3) make it \emph{fixable} at generation
 time with lightweight, deployable mitigations; and (4) make the whole pipeline
 \emph{reproducible}. We deliberately treat the prevalence of the bias as an
 empirical question to be answered by measurement, not as a settled fact.
@@ -151,8 +151,10 @@ quantified with a model-agnostic, exploitability-oriented metric suite?
 difficulty?
 \item[RQ3.] Does a ``pick-the-longest'' strategy yield an above-chance score,
 and how much information does length alone carry about the key?
-\item[RQ4.] Can generation-time mitigations remove the leak without degrading
-item quality, and by how much (measured before/after)?
+\item[RQ4.] Can generation-time mitigations remove the length signal---measured
+before/after on the option-length metrics above---and by how much? (We evaluate
+\emph{option-length characteristics}, not pedagogical item quality; assessing
+quality remains future work, \S\ref{sec:future}.)
 \end{description}
 
 \paragraph{Contributions and scope.} Our contributions are the metric suite
@@ -161,7 +163,7 @@ mitigation toolkit (\S\ref{sec:mitigation}), and the reproducible analysis
 (\S\ref{sec:results}). \textbf{An explicit caveat governs the whole paper:}
 the numbers reported in \S\ref{sec:results} are produced from a
 \emph{synthetic} corpus with injected, known bias levels. They exist to
-validate that the metrics behave correctly and that the mitigations work; they
+verify that the metrics behave correctly and that the mitigations work; they
 are \emph{not} measurements of any real commercial model and must not be read
 as such. \S\ref{sec:limitations} states this plainly and
 \S\ref{sec:future} gives the preregistered protocol for the real-model and
@@ -229,8 +231,8 @@ flaw rates. No prior work, to our knowledge, (i)~defines a reusable
 \emph{across} the major commercial assistants under a common protocol, and
 (iii)~pairs the measurement with a \emph{generation-time} mitigation toolkit
 evaluated before/after. This paper targets that gap, and is explicit about
-which parts are delivered as validated tooling versus which require sanctioned
-data collection to estimate real-world magnitude.
+which parts are delivered as \emph{verified} tooling versus which require
+sanctioned data collection to estimate real-world magnitude.
 
 %==============================================================
 \section{Formalizing Answer-Length Leakage}
@@ -295,7 +297,15 @@ $\mathrm{AUC}=0.5$ is no leakage; $\mathrm{AUC}=1$ means length perfectly
 ranks the key first. We complement the AUC with a logistic regression of the
 binary ``is-key'' label on standardized option length, reporting the odds
 ratio per one standard deviation of length, which expresses leakage as a
-single interpretable multiplier.
+single interpretable multiplier. Crucially, the $m$ options of an item are
+\emph{not} independent observations---exactly one is keyed, and items in a
+(model\,$\times$\,subject\,$\times$\,difficulty) cell share generative
+structure---so a pooled option-level fit with classical standard errors would
+understate uncertainty. We therefore report the slope from a \emph{conditional}
+(within-item) logistic model, which is exact for the ``one-correct-of-$m$''
+design, and attach cluster-robust standard errors and a cluster bootstrap
+(resampling whole cells) to every option-level statistic
+(\texttt{src/stats\_robust.py}; \S\ref{sec:results}).
 
 All five quantities are implemented in \texttt{src/metrics.py} with
 bootstrap confidence intervals and per-group (model, subject, difficulty)
@@ -306,8 +316,9 @@ reporting; \S\ref{sec:results} reports them on the synthetic corpus.
 \label{sec:harness}
 
 To measure---rather than assume---the bias, we provide
-\texttt{src/collect.py}, a provider-agnostic harness that elicits MCQs from
-six widely used assistants (Anthropic Claude, OpenAI ChatGPT, Google Gemini,
+\texttt{src/collect.py}, a provider-agnostic harness \emph{designed to elicit}
+MCQs from six widely used assistants (Anthropic Claude, OpenAI ChatGPT, Google
+Gemini,
 xAI Grok, DeepSeek, and Perplexity) through their respective APIs. The harness
 embodies three design principles.
 
@@ -426,13 +437,25 @@ ranging from strong (\textsc{Model-A}) to near-neutral (\textsc{Model-F}).
 verify that the metrics recover known bias levels with correct ordering and
 calibration, and (ii) demonstrate the mitigations on a controlled ground
 truth. Any resemblance between a placeholder's value and a figure quoted for a
-named commercial model would be coincidental.
+named commercial model would be coincidental. We stress that this is
+\emph{consistency checking, not measurement validation}: because the synthetic
+key is lengthened only by appending semantically empty clauses, length is the
+\emph{sole} injected signal and is uncorrelated with genuine content, so a
+length-based metric recovering it confirms the implementation is correct but says
+nothing about whether the metric captures leakage in real items---where length
+co-varies with specificity, correctness, and difficulty. Establishing external
+validity requires the real corpus (\S\ref{sec:future}).
 
 \paragraph{Procedure.} \texttt{src/analyze.py} computes overall and per-group
-metrics with bootstrap CIs, fits the logistic leakage model, applies
-Holm--Bonferroni correction across per-model tests, runs the mitigation
-before/after comparison, and emits all tables and figures. The pipeline is
-deterministic given a seed.
+metrics with bootstrap CIs, fits the logistic leakage model with
+clustering-aware inference (\texttt{src/stats\_robust.py}: a within-item
+conditional logit, cluster-robust standard errors at the item and cell levels,
+and a cell-level cluster bootstrap), applies Holm--Bonferroni correction across
+per-model tests, runs the mitigation before/after comparison, and emits all
+tables and figures. With only six generators, model-level variability is
+characterized by the per-model breakdown rather than a model-level sandwich
+estimator (too few clusters to be reliable). The pipeline is deterministic given
+a seed.
 
 \paragraph{Environment.} Python~3.12 with NumPy, SciPy, pandas, Matplotlib, and
 statsmodels. All code, seeds, tables, and figures are in the accompanying
@@ -454,11 +477,16 @@ $[0.340,0.382]$)---i.e.\ length alone carries a test-taker about $36\%$ of the
 way from chance to a perfect cheat. The mean verbosity differential is
 $\bar\delta={+}80.97$ characters (standardized effect $0.68$; Wilcoxon
 $p\approx2\times10^{-255}$). A length-only classifier achieves a leakage
-$\mathrm{AUC}=0.698$ (95\% CI $[0.688,0.708]$), and the logistic model gives an
-odds ratio of $2.25$ per one standard deviation of option length
-($\approx 102$ characters; $p\approx0$). The key is the single longest option
-in $51.8\%$ of items, versus the $25\%$ expected under no signal
-(Fig.~\ref{fig:rank}).
+$\mathrm{AUC}=0.698$ (cell-clustered bootstrap 95\% CI $[0.674,0.723]$).
+Accounting for the non-independence of an item's options, a conditional
+(within-item) logistic model gives an odds ratio of $2.61$ per standard deviation
+of option length (95\% CI $[2.48,2.74]$); a pooled logistic gives a smaller
+$2.25$, but its cell-cluster-robust CI ($[2.04,2.49]$) is more than twice as wide
+as the naive independence-assuming interval ($[2.16,2.35]$)---a concrete
+illustration of why the correction matters, even though the injected effect here
+is large enough to remain significant under it ($p\!\approx\!3\times10^{-58}$
+clustered). The key is the single longest option in $51.8\%$ of items, versus the
+$25\%$ expected under no signal (Fig.~\ref{fig:rank}).
 
 \subsection{Variation across models}
 Table~\ref{tab:permodel} reports per-generator metrics. By construction the
@@ -532,7 +560,9 @@ differential from ${+}80.97$ to ${-}16.68$ characters. In other words, after
 hardening, the longest option is no longer a reliable guess, and a length-only
 classifier does no better than chance. The mitigation over-corrects $\bar\delta$
 slightly negative; this is a tunable property of the deterministic matcher and
-can be centered by adjusting the target band.
+can be centered by adjusting the target band. These before/after numbers quantify
+the \emph{length} signal only; they are not a measure of item quality, which we do
+not evaluate here (\S\ref{sec:limitations}).
 
 \begin{table}[t]
 \centering
@@ -577,7 +607,8 @@ designed to do: the metrics recover injected bias with correct ordering and
 calibrated magnitudes, the statistical tests behave, and the mitigations remove
 the leak on controlled ground truth. This is necessary groundwork---an effect
 this consequential should be measured with an instrument that has been
-validated end to end before it is pointed at production systems. What the
+\emph{verified} end to end (software verification, not measurement validation)
+before it is pointed at production systems. What the
 synthetic study cannot tell us is the \emph{real} magnitude for Claude,
 ChatGPT, Gemini, Grok, DeepSeek, or Perplexity; that requires running the
 harness against the live endpoints (\S\ref{sec:future}).
@@ -626,11 +657,15 @@ collect items under a length-neutral prompt, and delivered a generation-time
 mitigation toolkit with a before/after protocol. On a clearly labeled synthetic
 corpus the suite recovers injected bias and the toolkit drives exploitability
 from $E={+}0.36$ to parity while cutting leaky items from $71\%$ to $3\%$.
-Answering the research questions: leakage \emph{is} definable and quantifiable
-(RQ1); the suite resolves model-level differences (RQ2); a longest-option
-strategy beats chance on leaky corpora and length carries substantial
-information about the key (RQ3); and lightweight mitigations remove the leak
-without discarding items (RQ4). The contribution is a deployable measurement-
+Answering the research questions \emph{on the synthetic corpus}: leakage
+\emph{is} definable and quantifiable (RQ1); the suite is sensitive enough to
+resolve the injected model-level differences (RQ2); a longest-option strategy
+beats chance on leaky corpora and length carries substantial information about the
+key (RQ3); and lightweight mitigations drive the measured length signal to parity
+without discarding items (RQ4). We did \emph{not} evaluate pedagogical item
+quality, and the deterministic rewriter used in the demonstration manipulates
+length only; whether a length-balancing rewrite preserves item quality is left to
+future work (\S\ref{sec:future}). The contribution is a deployable measurement-
 and-mitigation stack; the open empirical question---the magnitude in real
 commercial systems---is one we have made \emph{straightforward to answer} with
 the included harness and preregistered protocol.
@@ -645,7 +680,7 @@ We are explicit about what this study does and does not establish.
 \item \textbf{No real-model measurements.} Every number in
 \S\ref{sec:results} comes from a synthetic corpus with injected bias. We do not
 report, and the reader must not infer, the leakage of any named commercial
-model. The synthetic study validates tooling only.
+model. The synthetic study verifies the tooling only.
 \item \textbf{The reported magnitudes are illustrative.} The headline reduction
 ($E:{+}0.36\!\to\!{-}0.06$) reflects controlled ground truth and tuned
 thresholds; real corpora may differ in both baseline leakage and achievable
@@ -653,6 +688,13 @@ reduction.
 \item \textbf{Length is a proxy.} Character/word length is one surface cue;
 keys may also leak through specificity, grammaticality, or option position. We
 measure length; we do not claim it is the only or dominant cue.
+\item \textbf{Item quality is not evaluated.} We measure option-length
+characteristics, not whether mitigated items remain valid, answerable, or
+pedagogically sound. The deterministic rewriter used to produce the before/after
+numbers neutralizes length by trimming or padding text and is \emph{not} a
+meaning-preserving editor; a real LLM rewriter (\S\ref{sec:mitigation}) and an
+explicit quality assessment (e.g.\ expert review, readability, answerability) are
+prerequisites for any claim that mitigation preserves item quality.
 \item \textbf{Prompt sensitivity.} Real measurements will depend on the
 elicitation prompt, decoding temperature, and model version. Our length-neutral
 prompt is one defensible choice; results may not transfer across prompts.
@@ -701,12 +743,15 @@ default, turning the mitigation from a research artifact into infrastructure.
 %==============================================================
 \section*{Reproducibility and Artifacts}
 \addcontentsline{toc}{section}{Reproducibility and Artifacts}
-All metrics (\texttt{metrics.py}), the collection harness
-(\texttt{collect.py}), the mitigation toolkit (\texttt{mitigate.py}), the
-synthetic generator (\texttt{synthesize\_demo.py}), and the analysis driver
-(\texttt{analyze.py}) are included, along with the synthetic corpus, the
-generated tables, and all figures. The pipeline is deterministic given a seed.
-See Appendix~\ref{app:repo} for the layout and commands.
+All metrics (\texttt{metrics.py}), the clustering-aware inference
+(\texttt{stats\_robust.py}), the legacy harness (\texttt{collect.py}) and a
+modular real-collection package (\texttt{data\_collection/}), the mitigation
+toolkit (\texttt{mitigate.py}), the synthetic generator
+(\texttt{synthesize\_demo.py}), the predictive exploitability pipeline
+(\texttt{exploitability.py}), and the analysis driver (\texttt{analyze.py}) are
+included, along with the synthetic corpus, the generated tables, and all figures.
+The pipeline is deterministic given a seed. See Appendix~\ref{app:repo} for the
+layout and commands.
 
 %==============================================================
 \section*{Ethical Considerations}
@@ -726,15 +771,19 @@ unverified claims about named systems.
 \small
 \begin{verbatim}
 llm-mcq-length-bias/
-  src/metrics.py        # LAA, E, delta, AUC, logistic
-  src/collect.py        # 6-provider harness (--dry-run)
-  src/mitigate.py       # auditor + 3 mitigations
-  src/synthesize_demo.py# synthetic corpus generator
-  src/analyze.py        # driver: tables + figures
-  data/                 # corpora (jsonl)
-  results/              # results_*.json, *.tex tables
-  figures/              # *.png/*.pdf
-  paper/                # main.tex, references.bib
+  src/metrics.py         # LAA, E, delta, AUC, logistic
+  src/stats_robust.py    # clustering-aware inference
+  src/collect.py         # legacy single-file harness
+  src/mitigate.py        # auditor + 3 mitigations
+  src/synthesize_demo.py # synthetic corpus generator
+  src/exploitability.py  # predictive leakage pipeline
+  src/analyze.py         # driver: tables + figures
+  data_collection/       # modular real-collection pkg
+  reports/               # audit + analysis reports
+  data/                  # corpora (jsonl)
+  results/               # results_*.json, *.tex tables
+  figures/               # *.png/*.pdf
+  paper/                 # main.tex, references.bib
 \end{verbatim}
 Typical workflow:
 \begin{verbatim}

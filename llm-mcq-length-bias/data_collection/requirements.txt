@@ -1,0 +1,10 @@
+# Data-collection package dependencies.
+# Core runtime needs only `requests`; everything else is optional and only
+# imported on the code path that uses it (no silent hard dependency).
+
+requests>=2.31        # live provider HTTP calls (not needed for --dry-run/tests)
+
+# --- optional ---
+# pyyaml>=6.0         # only if you use a .yaml config (.toml/.json need no extra dep)
+# mlflow>=2.0         # only if tracking.backend = "mlflow" (recommended for the real run)
+# pytest>=7.0         # only to run the unit tests in tests/

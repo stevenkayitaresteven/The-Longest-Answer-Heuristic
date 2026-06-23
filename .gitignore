@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .ipynb_checkpoints/
+.pytest_cache/
 
 # Virtual environments
 .venv/
@@ -11,6 +12,21 @@ env/
 
 # OS / editor
 .DS_Store
+
+# LaTeX build artifacts (the committed main.pdf is the built output)
+*.aux
+*.bbl
+*.blg
+*.toc
+*.out
+*.synctex.gz
+paper/*.log
+
+# Experiment-tracking / real-collection runtime outputs (Phase 6)
+data_collection/outputs/
+data_collection/runs/
+mlruns/
+*.duckdb
 
 # Local real-data corpora (collected per-user via collect.py; not redistributed)
 llm-mcq-length-bias/data/corpus_*.jsonl
